@@ -5,7 +5,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.enums import ChatAction, ParseMode
 from pyrogram import filters
 
-API_KEY = "abacf43bf0ef13f467283e5bc03c2e1f29dae4228e8c612d785ad428b32db6ce"
+API_KEY = "a54fb9550ac892a66aff264f9dfc867140b20c517e93fe1ec43beb50555a2150"
 
 BASE_URL = "https://api.together.xyz/v1/chat/completions"
 
@@ -75,7 +75,7 @@ async def chat_gpt(bot, message):
                             [
                                 InlineKeyboardButton(
                                     " ʀᴀᴅᴇɴ-ᴍᴜꜱɪᴄ ",
-                                    url=f"https://t.me/hot_dpz_ll",
+                                    url=f"https://t.me/FoReVeR_ToGeThEr143",
                                 )
                             ]
                         ]
