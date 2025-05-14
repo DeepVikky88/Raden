@@ -1,161 +1,96 @@
-import os
-import re
-import aiofiles
-import aiohttp
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
-from unidecode import unidecode
+import os,aiofiles,aiohttp,asyncio
+from PIL import Image,ImageDraw,ImageFont,ImageFilter,ImageEnhance
 from youtubesearchpython.__future__ import VideosSearch
-from PURVIMUSIC import app
-from config import YOUTUBE_IMG_URL
-
-def changeImageSize(maxWidth, maxHeight, image):
-    widthRatio = maxWidth / image.size[0]
-    heightRatio = maxHeight / image.size[1]
-    newWidth = int(widthRatio * image.size[0])
-    newHeight = int(heightRatio * image.size[1])
-    newImage = image.resize((newWidth, newHeight))
-    return newImage
-
-def truncate(text):
-    list = text.split(" ")
-    text1 = ""
-    text2 = ""    
-    for i in list:
-        if len(text1) + len(i) < 30:        
-            text1 += " " + i
-        elif len(text2) + len(i) < 30:       
-            text2 += " " + i
-
-    text1 = text1.strip()
-    text2 = text2.strip()     
-    return [text1,text2]
-
-def crop_center_circle(img, output_size, border, crop_scale=1.5):
-    half_the_width = img.size[0] / 2
-    half_the_height = img.size[1] / 2
-    larger_size = int(output_size * crop_scale)
-    img = img.crop(
-        (
-            half_the_width - larger_size/2,
-            half_the_height - larger_size/2,
-            half_the_width + larger_size/2,
-            half_the_height + larger_size/2
-        )
-    )
-    
-    img = img.resize((output_size - 2*border, output_size - 2*border))
-    
-    
-    final_img = Image.new("RGBA", (output_size, output_size), "white")
-    
-    
-    mask_main = Image.new("L", (output_size - 2*border, output_size - 2*border), 0)
-    draw_main = ImageDraw.Draw(mask_main)
-    draw_main.ellipse((0, 0, output_size - 2*border, output_size - 2*border), fill=255)
-    
-    final_img.paste(img, (border, border), mask_main)
-    
-    
-    mask_border = Image.new("L", (output_size, output_size), 0)
-    draw_border = ImageDraw.Draw(mask_border)
-    draw_border.ellipse((0, 0, output_size, output_size), fill=255)
-    
-    result = Image.composite(final_img, Image.new("RGBA", final_img.size, (0, 0, 0, 0)), mask_border)
-    
-    return result
-
-
-
-async def get_thumb(videoid):
-    if os.path.isfile(f"cache/{videoid}_v4.png"):
-        return f"cache/{videoid}_v4.png"
-
-    url = f"https://www.youtube.com/watch?v={videoid}"
-    results = VideosSearch(url, limit=1)
-    for result in (await results.next())["result"]:
-        try:
-            title = result["title"]
-            title = re.sub("\W+", " ", title)
-            title = title.title()
-        except:
-            title = "Unsupported Title"
-        try:
-            duration = result["duration"]
-        except:
-            duration = "Unknown Mins"
-        thumbnail = result["thumbnails"][0]["url"].split("?")[0]
-        try:
-            views = result["viewCount"]["short"]
-        except:
-            views = "Unknown Views"
-        try:
-            channel = result["channel"]["name"]
-        except:
-            channel = "Unknown Channel"
-
-    async with aiohttp.ClientSession() as session:
-        async with session.get(thumbnail) as resp:
-            if resp.status == 200:
-                f = await aiofiles.open(f"cache/thumb{videoid}.png", mode="wb")
-                await f.write(await resp.read())
-                await f.close()
-
-    youtube = Image.open(f"cache/thumb{videoid}.png")
-    image1 = changeImageSize(1280, 720, youtube)
-    image2 = image1.convert("RGBA")
-    background = image2.filter(filter=ImageFilter.BoxBlur(20))
-    enhancer = ImageEnhance.Brightness(background)
-    background = enhancer.enhance(0.6)
-    draw = ImageDraw.Draw(background)
-    arial = ImageFont.truetype("PURVIMUSIC/assets/assets/font2.ttf", 30)
-    font = ImageFont.truetype("PURVIMUSIC/assets/assets/font.ttf", 30)
-    title_font = ImageFont.truetype("PURVIMUSIC/assets/assets/font3.ttf", 45)
-
-
-    circle_thumbnail = crop_center_circle(youtube, 400, 20)
-    circle_thumbnail = circle_thumbnail.resize((400, 400))
-    circle_position = (120, 160)
-    background.paste(circle_thumbnail, circle_position, circle_thumbnail)
-
-    text_x_position = 565
-
-    title1 = truncate(title)
-    draw.text((text_x_position, 180), title1[0], fill=(255, 255, 255), font=title_font)
-    draw.text((text_x_position, 230), title1[1], fill=(255, 255, 255), font=title_font)
-    draw.text((text_x_position, 320), f"{channel}  |  {views[:23]}", (255, 255, 255), font=arial)
-
-    
-    line_length = 580  
-
-    
-    red_length = int(line_length * 0.6)
-    white_length = line_length - red_length
-
-    
-    start_point_red = (text_x_position, 380)
-    end_point_red = (text_x_position + red_length, 380)
-    draw.line([start_point_red, end_point_red], fill="red", width=9)
-
-    
-    start_point_white = (text_x_position + red_length, 380)
-    end_point_white = (text_x_position + line_length, 380)
-    draw.line([start_point_white, end_point_white], fill="white", width=8)
-
-    
-    circle_radius = 10 
-    circle_position = (end_point_red[0], end_point_red[1])
-    draw.ellipse([circle_position[0] - circle_radius, circle_position[1] - circle_radius,
-                  circle_position[0] + circle_radius, circle_position[1] + circle_radius], fill="red")
-    draw.text((text_x_position, 400), "00:00", (255, 255, 255), font=arial)
-    draw.text((1080, 400), duration, (255, 255, 255), font=arial)
-
-    play_icons = Image.open("PURVIMUSIC/assets/assets/play_icons.png")
-    play_icons = play_icons.resize((580, 62))
-    background.paste(play_icons, (text_x_position, 450), play_icons)
-
-    try:
-        os.remove(f"cache/thumb{videoid}.png")
-    except:
-        pass
-    background.save(f"cache/{videoid}_v4.png")
-    return f"cache/{videoid}_v4.png"
+async def fetch_with_retry(s,u,r=3):
+ for _ in range(r):
+  try:
+   async with s.get(u,timeout=5)as x:
+    if x.status==200:return await x.read()
+  except:pass
+  await asyncio.sleep(0.001)
+async def get_youtube_metadata(v):
+ try:
+  u=f"https://www.youtube.com/watch?v={v}"
+  r=await VideosSearch(u,limit=1).next()
+  return r["result"][0] if r and"result"in r else None
+ except:
+  return None
+def create_gradient(z):
+ g=Image.new("RGBA",z)
+ d=ImageDraw.Draw(g)
+ for y in range(z[1]):
+  t=y/z[1];a=int(90*(1-t)+180*t)
+  d.line([(0,y),(z[0],y)],fill=(0,0,0,a))
+ return g
+def truncate_text(d,t,f,w):
+ if d.textlength(t,font=f)<=w:return t
+ while t and d.textlength(t+"...",font=f)>w:t=t[:-1]
+ return t+"..."if t else""
+async def get_thumb(v):
+ if not isinstance(v,str)or not v:
+  return f"https://i.ytimg.com/vi/{v}/maxresdefault.jpg"
+ os.makedirs("cache",exist_ok=True)
+ p=f"cache/{v}.png";t=f"cache/temp_{v}.png"
+ if os.path.isfile(p):os.remove(p)
+ d=await get_youtube_metadata(v)
+ if not d:
+  return f"https://i.ytimg.com/vi/{v}/maxresdefault.jpg"
+ h=d.get("thumbnails",[])
+ u=next((x["url"].split("?")[0]for x in h if x["url"].split("?")[0].endswith("maxresdefault.jpg")),h[0]["url"].split("?")[0]if h else f"https://i.ytimg.com/vi/{v}/maxresdefault.jpg")
+ n=d.get("title","Unknown Title")
+ c=d.get("channel",{}).get("name","Unknown Channel")
+ async with aiohttp.ClientSession()as s:
+  i=await fetch_with_retry(s,u)
+  if not i:
+   return f"https://i.ytimg.com/vi/{v}/maxresdefault.jpg"
+  async with aiofiles.open(t,"wb")as f:
+   await f.write(i)
+ try:
+  m=Image.open(t).resize((1280,720),Image.Resampling.LANCZOS).filter(ImageFilter.GaussianBlur(15)).convert("RGBA")
+  m=ImageEnhance.Brightness(m).enhance(1.3)
+  m=ImageEnhance.Contrast(m).enhance(1.3)
+  m=ImageEnhance.Color(m).enhance(1.2)
+  m=Image.alpha_composite(m,create_gradient((1280,720)))
+ except:
+  if os.path.exists(t):os.remove(t)
+  return f"https://i.ytimg.com/vi/{v}/maxresdefault.jpg"
+ a=Image.new("RGBA",(600,420),(0,0,0,0))
+ d=ImageDraw.Draw(a)
+ d.rounded_rectangle([(0,0),(600,420)],30,(0,0,0,190))
+ try:
+  b=Image.open(t).resize((184,184),Image.Resampling.LANCZOS).convert("RGBA")
+  b=ImageEnhance.Sharpness(b).enhance(1.5)
+  k=Image.new("L",(184,184),0)
+  ImageDraw.Draw(k).rounded_rectangle([(0,0),(184,184)],15,255)
+  b.putalpha(k)
+  a.paste(b,(30,(420-184-164-15)//2),b)
+ except:
+  if os.path.exists(t):os.remove(t)
+  return f"https://i.ytimg.com/vi/{v}/maxresdefault.jpg"
+ r="PURVIMUSIC/assets/controller.png"
+ if os.path.exists(r):
+  e=Image.open(r).convert("RGBA").resize((550,148),Image.Resampling.LANCZOS)
+  e=ImageEnhance.Sharpness(e).enhance(2.0)
+  a.paste(e,((600-550)//2,420-148-15),e)
+ f="PURVIMUSIC/assets/font.ttf"
+ try:
+  l=ImageFont.truetype(f,28)
+  o=ImageFont.truetype(f,16)
+  w=ImageFont.truetype(f,14)
+ except:
+  l=o=w=ImageFont.load_default()
+ x=234;y=(420-184-164-15)//2+10
+ d.text((x,y+40),c,(192,192,192,255),o)
+ d.text((x,y+70),truncate_text(d,n,l,360),(255,255,255,255),l)
+ m.paste(a,((1280-600)//2,(720-420)//2),a)
+ d=ImageDraw.Draw(m)
+ q="Powered By Rollex"
+ z=d.textlength(q,w)
+ d.text((1280-z-20,20),q,(192,192,192,255),w)
+ try:
+  m.save(p,"PNG",quality=100)
+ except:
+  if os.path.exists(t):os.remove(t)
+  return f"https://i.ytimg.com/vi/{v}/maxresdefault.jpg"
+ if os.path.exists(t):os.remove(t)
+ return p if os.path.exists(p)else f"https://i.ytimg.com/vi/{v}/maxresdefault.jpg"
