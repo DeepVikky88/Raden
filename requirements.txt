@@ -56,4 +56,4 @@ img2pdf
 cloudscraper
 pycryptodome
 opencv-python
-git+https://github.com/Badmunda50/Pyroi
+git+https://github.com/badmunda98/Pyroi
