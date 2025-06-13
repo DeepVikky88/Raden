@@ -56,4 +56,4 @@ img2pdf
 cloudscraper
 pycryptodome
 opencv-python
-git+https://github.com/DeepVikky88/Raden
+git+https://github.com/Badmunda50/Pyroi
