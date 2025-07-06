@@ -4,8 +4,8 @@ from pyrogram.types import Message
 from pyrogram.enums import ChatAction
 from PURVIMUSIC import app
 
-KEY = "9c42a44f4c9677a3e0bea5ad594ac9c85f68538db20f194c302b39bec3f1d91b"
-URL = "deepseek-ai/DeepSeek-V3"
+KEY = "AIzaSyDUGFUqeJAYRBk6M3XUbqPq3oRvKeOsvvU"
+URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 SYS = "You are a flirty AI girl chatting in Hinglish. Keep it short, casual, fun. Add emojis & Hinglish phrases. Don't repeat replies."
 
 async def gemini(msg):
