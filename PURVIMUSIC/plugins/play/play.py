@@ -6,14 +6,14 @@ from pyrogram.types import InlineKeyboardMarkup, InputMediaPhoto, Message
 from pytgcalls.exceptions import NoActiveGroupCall
 
 import config
-from AnonXMusic import Apple, Resso, SoundCloud, Spotify, Telegram, YouTube, app
-from AnonXMusic.core.call import Anony
-from AnonXMusic.utils import seconds_to_min, time_to_seconds
-from AnonXMusic.utils.channelplay import get_channeplayCB
-from AnonXMusic.utils.decorators.language import languageCB
-from AnonXMusic.utils.decorators.play import PlayWrapper
-from AnonXMusic.utils.formatters import formats
-from AnonXMusic.utils.inline import (
+from PURVIMUSIC import Apple, Resso, SoundCloud, Spotify, Telegram, YouTube, app
+from PURVIMUSIC.core.call import Anony
+from PURVIMUSIC.utils import seconds_to_min, time_to_seconds
+from PURVIMUSIC.utils.channelplay import get_channeplayCB
+from PURVIMUSIC.utils.decorators.language import languageCB
+from PURVIMUSIC.utils.decorators.play import PlayWrapper
+from PURVIMUSIC.utils.formatters import formats
+from PURVIMUSIC.utils.inline import (
     botplaylist_markup,
     livestream_markup,
     playlist_markup,
